@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "practice-adf-new"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"AzurePostgreSql1_connectionString": {
+			"value": ""
+		},
+		"ls_azureblobstorage_broze_accountKey": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://practicestorageravi.dfs.core.windows.net/"
+		},
+		"ls_AzureDatabricks_properties_typeProperties_existingClusterId": {
+			"value": "0426-171818-lcznbjgg"
+		},
+		"ls_azureblobstorage_broze_properties_typeProperties_url": {
+			"value": "https://practicestorageravi.dfs.core.windows.net/"
+		},
+		"ls_restservice_base_url_properties_typeProperties_url": {
+			"value": "https://ergast.com/api/f1/"
+		}
+	}
+}

@@ -1,0 +1,1505 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "practice-adf-new"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"AzurePostgreSql1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzurePostgreSql1'"
+		},
+		"ls_azureblobstorage_broze_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_azureblobstorage_broze'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://practicestorageravi.dfs.core.windows.net/"
+		},
+		"ls_AzureDatabricks_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0426-171818-lcznbjgg"
+		},
+		"ls_azureblobstorage_broze_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://practicestorageravi.dfs.core.windows.net/"
+		},
+		"ls_restservice_base_url_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://ergast.com/api/f1/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzurePostgreSql1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzurePostgreSql",
+				"typeProperties": {
+					"connectionString": "[parameters('AzurePostgreSql1_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_AzureDatabricks')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-3395082703528028.8.azuredatabricks.net",
+					"authentication": "MSI",
+					"workspaceResourceId": "/subscriptions/4d6aab32-a915-4542-8222-6c0813fce1d9/resourceGroups/rg_practice/providers/Microsoft.Databricks/workspaces/practice-adb-new",
+					"existingClusterId": "[parameters('ls_AzureDatabricks_properties_typeProperties_existingClusterId')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_azureblobstorage_broze')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_azureblobstorage_broze_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_azureblobstorage_broze_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_restservice_base_url')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('ls_restservice_base_url_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_AzurePostgreSqlTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzurePostgreSql1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzurePostgreSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzurePostgreSql1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_season_rest')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_restservice_base_url",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"relative_url": {
+						"type": "String",
+						"defaultValue": "seasons.json?limit=75"
+					}
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": {
+						"value": "@dataset().relative_url",
+						"type": "Expression"
+					}
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_restservice_base_url')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_sink_seasons')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_azureblobstorage_broze",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"directory_nm": {
+						"type": "String",
+						"defaultValue": "seasons"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@concat('bronze','/',dataset().directory_nm,'/',utcNow('yyyyMMdd'))",
+							"type": "Expression"
+						},
+						"fileSystem": "formulaone"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_azureblobstorage_broze')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_ingest_through_adb_silver')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "act_set_var_job_id",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "job_id",
+							"value": {
+								"value": "@formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyyMMddHHmmss')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "act_lookup_metadata_entry",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_set_var_job_id",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_ingest_silver', 'adb_transform', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "act_notebook_adb_transform",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "act_lookup_metadata_entry",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Repos/raj.ravi96@outlook.com/formulaone/ingest-formulaone/all_ingest"
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_AzureDatabricks",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "act_lookup_metadata_update",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_notebook_adb_transform",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "UPDATE public.formulaone_metadata_tbl\nSET end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', status='Completed'\nWHERE job_id='@{variables('job_id')}';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "act_lookup_metadata_update_failure",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_notebook_adb_transform",
+								"dependencyConditions": [
+									"Failed",
+									"Skipped"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "UPDATE public.formulaone_metadata_tbl\nSET end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', status='Failed'\nWHERE job_id='@{variables('job_id')}';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"job_id": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-04-28T11:46:12Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_AzurePostgreSqlTable')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_AzureDatabricks')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_qualifying_results')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "act_web_race_schedule",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('act_web_race_schedule').output['MRData']['RaceTable']['Races']",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "act_copy_qualifying",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "RestSource",
+											"httpRequestTimeout": "00:01:40",
+											"requestInterval": "00.00:00:00.010",
+											"requestMethod": "GET",
+											"paginationRules": {
+												"supportRFC5988": "true"
+											}
+										},
+										"sink": {
+											"type": "JsonSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "JsonWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_season_rest",
+											"type": "DatasetReference",
+											"parameters": {
+												"relative_url": {
+													"value": "@concat(item().season,'/',item().round,'/qualifying.json')",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_sink_seasons",
+											"type": "DatasetReference",
+											"parameters": {
+												"directory_nm": "qualifying"
+											}
+										}
+									]
+								},
+								{
+									"name": "act_copy_results",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "act_copy_qualifying",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "RestSource",
+											"httpRequestTimeout": "00:01:40",
+											"requestInterval": "00.00:00:00.010",
+											"requestMethod": "GET",
+											"paginationRules": {
+												"supportRFC5988": "true"
+											}
+										},
+										"sink": {
+											"type": "JsonSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "JsonWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_season_rest",
+											"type": "DatasetReference",
+											"parameters": {
+												"relative_url": {
+													"value": "@concat(item().season,'/',item().round,'/results.json')",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_sink_seasons",
+											"type": "DatasetReference",
+											"parameters": {
+												"directory_nm": "results"
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "act_web_race_schedule",
+						"type": "WebActivity",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": {
+								"value": "@concat('https://ergast.com/api/f1/',pipeline().parameters.season,'.json')",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"season": {
+						"type": "string",
+						"defaultValue": "2012"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-04-28T11:46:12Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_season_rest')]",
+				"[concat(variables('factoryId'), '/datasets/ds_sink_seasons')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_transform_adb')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "act_set_var_job_id",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "job_id",
+							"value": {
+								"value": "@formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyyMMddHHmmss')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "act_lookup_metadata_entry",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_set_var_job_id",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_transform_adb', 'adb_gold', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": true
+						}
+					},
+					{
+						"name": "act_adb_transform",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "act_lookup_metadata_entry",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Repos/raj.ravi96@outlook.com/formulaone/transform-formulaone/all_transform"
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_AzureDatabricks",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "act_lookup_metadata_update",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_adb_transform",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "UPDATE public.formulaone_metadata_tbl\nSET end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', status='Completed'\nWHERE job_id='@{variables('job_id')}';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": true
+						}
+					},
+					{
+						"name": "act_lookup_metadata_update_failure",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_adb_transform",
+								"dependencyConditions": [
+									"Failed",
+									"Skipped"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "UPDATE public.formulaone_metadata_tbl\nSET end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', status='Failed'\nWHERE job_id='@{variables('job_id')}';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"job_id": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-04-28T11:46:12Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_AzurePostgreSqlTable')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_AzureDatabricks')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_ingest_api_data_to_adls')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "act_copy_seasons",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "act_update_for_circuits_seasons",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"paginationRules": {
+									"supportRFC5988": "true"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_season_rest",
+								"type": "DatasetReference",
+								"parameters": {
+									"relative_url": "seasons.json?limit=70"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_sink_seasons",
+								"type": "DatasetReference",
+								"parameters": {
+									"directory_nm": "seasons"
+								}
+							}
+						]
+					},
+					{
+						"name": "act_lookup_seasons",
+						"description": "This is lookup activity to get seasons from ADLS gen2 storage to get races schedule data.",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_update_for_seasons_races",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.json",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "ds_sink_seasons",
+								"type": "DatasetReference",
+								"parameters": {
+									"directory_nm": "seasons"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_for_each_seasons",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "act_lookup_seasons",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@array(activity('act_lookup_seasons').output.value[0]['MRData']['SeasonTable']['Seasons'])",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "copy_races_schedule",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "RestSource",
+											"httpRequestTimeout": "00:01:40",
+											"requestInterval": "00.00:00:00.010",
+											"requestMethod": "GET",
+											"paginationRules": {
+												"supportRFC5988": "true"
+											}
+										},
+										"sink": {
+											"type": "JsonSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "JsonWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_season_rest",
+											"type": "DatasetReference",
+											"parameters": {
+												"relative_url": {
+													"value": "@concat(item().season,'.json')",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_sink_seasons",
+											"type": "DatasetReference",
+											"parameters": {
+												"directory_nm": "races"
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "act_for_each_races",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "act_lookup_seasons_copy",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@array(activity('act_lookup_seasons_copy').output.value[0]['MRData']['SeasonTable']['Seasons'])",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "pl_qualifying_results",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "pl_qualifying_results",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"season": {
+												"value": "@item().season",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "act_copy_drivers",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "act_update_for_drivers_data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"paginationRules": {
+									"supportRFC5988": "true"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_season_rest",
+								"type": "DatasetReference",
+								"parameters": {
+									"relative_url": "drivers.json?limit=859"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_sink_seasons",
+								"type": "DatasetReference",
+								"parameters": {
+									"directory_nm": "drivers"
+								}
+							}
+						]
+					},
+					{
+						"name": "act_copy_constructors",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "act_update_for_drivers_constructors",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"paginationRules": {
+									"supportRFC5988": "true"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_season_rest",
+								"type": "DatasetReference",
+								"parameters": {
+									"relative_url": "constructors.json?limit=212"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_sink_seasons",
+								"type": "DatasetReference",
+								"parameters": {
+									"directory_nm": "constructors"
+								}
+							}
+						]
+					},
+					{
+						"name": "act_copy_circuits",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "act_update_for_constructors_circuits",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"paginationRules": {
+									"supportRFC5988": "true"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_season_rest",
+								"type": "DatasetReference",
+								"parameters": {
+									"relative_url": "circuits.json?limit=77"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_sink_seasons",
+								"type": "DatasetReference",
+								"parameters": {
+									"directory_nm": "circuits"
+								}
+							}
+						]
+					},
+					{
+						"name": "act_var_set_start_time",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "job_id",
+							"value": {
+								"value": "@formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyyMMddHHmmss')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "act_update_for_drivers_data",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_var_set_start_time",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'driver_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_update_for_drivers_constructors",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_copy_drivers",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'constructor_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nUPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='driver_api';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_update_for_constructors_circuits",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_copy_constructors",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'circuit_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nUPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='constructor_api';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_update_for_circuits_seasons",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_copy_circuits",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'season_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nUPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='circuit_api';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_update_for_seasons_races",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_copy_seasons",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'race_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nUPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='season_api';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_update_for_races_qualifying_result",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_for_each_seasons",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "INSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'qualifying_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nINSERT INTO public.formulaone_metadata_tbl\n(job_id, job_name, task_name, start_time, status)\nVALUES('@{variables('job_id')}', 'pl_all_ingest', 'result_api', '@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}', 'In-progress');\n\nUPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='race_api';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_final_update",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_for_each_races",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "UPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='result_api';\n\nUPDATE public.formulaone_metadata_tbl\nSET status='Completed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}' and task_name='qualifying_api';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_final_update_on_failure",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_for_each_races",
+								"dependencyConditions": [
+									"Failed",
+									"Skipped"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzurePostgreSqlSource",
+								"query": {
+									"value": "UPDATE public.formulaone_metadata_tbl\nSET status='Failed', end_time='@{formatDateTime(convertFromUtc(utcNow(),'Asia/Kolkata'),'yyyy-MM-dd HH:mm:ss')}'\nWHERE job_id='@{variables('job_id')}';\n\nSELECT job_id, job_name, task_name, start_time, end_time, status\nFROM public.formulaone_metadata_tbl;",
+									"type": "Expression"
+								},
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_AzurePostgreSqlTable",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "act_lookup_seasons_copy",
+						"description": "This is lookup activity to get seasons from ADLS gen2 storage to get races schedule data.",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "act_update_for_races_qualifying_result",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.json",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "ds_sink_seasons",
+								"type": "DatasetReference",
+								"parameters": {
+									"directory_nm": "seasons"
+								}
+							},
+							"firstRowOnly": false
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"job_id": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-04-28T11:46:13Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_season_rest')]",
+				"[concat(variables('factoryId'), '/datasets/ds_sink_seasons')]",
+				"[concat(variables('factoryId'), '/datasets/ds_AzurePostgreSqlTable')]",
+				"[concat(variables('factoryId'), '/pipelines/pl_qualifying_results')]"
+			]
+		}
+	]
+}
